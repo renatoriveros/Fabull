@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Actualización Estado</title>
+  <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+
+  <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.min.css">
+  <link rel="stylesheet" href="dist/css/AdminLTE.min.css">
+  <link rel="stylesheet" href="plugins/iCheck/square/blue.css">
+
+  <!-- SweetAlert2 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+  <!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+  <![endif]-->
+
+  <style>
+    /* opcional: que el loader de Swal se vea lindo */
+    .swal2-popup { font-size: 1.05em; }
+  </style>
+</head>
+
+<body class="hold-transition login-page">
+
+<script src="dist/js/validarut.js"></script>
+
+<div class="login-box">
+  <div class="login-logo">
+    <a href="index.html#"><b>Actualizar a Pedido Entregado</b></a>
+  </div>
+
+  <div class="login-box-body">
+    <p class="login-box-msg">Ingresa para cambiar estado.</p>
+
+    
+    
+    
+    <form id="formulario" name="formulario"
+          action="https://confirmacion.dbs.cl/vista/pedido/guardar_pedido_interno_entregado.php"
+          method="post" enctype="multipart/form-data">
+
+      <div class="form-group has-feedback">
+        <input type="text" name="order_id" onchange="order_retiro(this.value)" class="form-control" placeholder="Número Pedido">
+        <span class="glyphicon glyphicon-barcode form-control-feedback"></span>
+      </div>
+
+      <div class="form-group has-feedback">
+        <input type="text" name="picking_code" class="form-control" value="" placeholder="Código Usuario">
+        <span class="glyphicon glyphicon-user form-control-feedback"></span>
+      </div>
+
+      <div class="form-group has-feedback">
+        <input type="text" name="firstname" class="form-control" placeholder="Nombre de quien recibe">
+        <span class="glyphicon glyphicon-user form-control-feedback"></span>
+      </div>
+
+      <div class="form-group has-feedback">
+        <input type="text" name="rut" onchange="javascript:return Rut(document.formulario.rut.value)" class="form-control" placeholder="Rut">
+        <span class="glyphicon glyphicon-user form-control-feedback"></span>
+      </div>
+
+      <div class="form-group has-feedback">
+        <input type="file" name="photo" id="photo" class="form-control" accept=".jpg, .png, .jpeg">
+        <span class="glyphicon glyphicon-upload form-control-feedback"></span>
+        <small id="photoInfo" style="display:block;margin-top:6px;color:#777;"></small>
+      </div>
+
+      <div class="row">
+        <div class="col-xs-12">
+          <button id="btnEnviar" type="submit" class="btn btn-warning btn-block btn-flat">Enviar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- jQuery 2.2.3 -->
+<script src="plugins/jQuery/jquery-2.2.3.min.js"></script>
+<!-- Bootstrap 3.3.6 -->
+<script src="bootstrap/js/bootstrap.min.js"></script>
+<!-- iCheck -->
+<script src="plugins/iCheck/icheck.min.js"></script>
+
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+  // iCheck
+  $(function () {
+    $('input').iCheck({
+      checkboxClass: 'icheckbox_square-blue',
+      radioClass: 'iradio_square-blue',
+      increaseArea: '20%'
+    });
+  });
+
+  // === SweetAlert2 helpers ===
+  function swalError(title, text, focusEl) {
+    Swal.fire({
+      icon: 'error',
+      title: title || 'Faltan datos',
+      text: text || 'Revisa el formulario',
+      confirmButtonText: 'Ya'
+    }).then(function(){
+      if (focusEl) focusEl.focus();
+    });
+  }
+
+  function swalLoading(title, text) {
+    Swal.fire({
+      title: title || 'Procesando',
+      text: text || 'Por favor espera…',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+  }
+
+  function swalClose() {
+    Swal.close();
+  }
+
+  // Autocompletar datos por pedido
+  function order_retiro(order_id) {
+    $.ajax({
+      type: 'GET',
+      url: './includes/ajax/order_retiro.php',
+      data: "order_id=" + encodeURIComponent(order_id),
+      dataType: 'json',
+      cache: false,
+      success: function(json) {
+        if (json['firstname']) document.formulario.firstname.value = json['firstname'];
+        if (json['rut'])       document.formulario.rut.value       = json['rut'];
+      }
+    });
+  }
+
+  // Helpers
+  function bytesToHuman(bytes){
+    if (!bytes && bytes !== 0) return '';
+    var units = ['B','KB','MB','GB'];
+    var i = 0;
+    var n = bytes;
+    while (n >= 1024 && i < units.length-1) { n = n/1024; i++; }
+    return n.toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+  }
+
+  // Validación con SweetAlert2
+  function validar_formulario() {
+    var f = document.formulario;
+
+    if (f.picking_code.value.trim() === "") {
+      swalError('Falta el código', 'Debes ingresar el código de usuario.', f.picking_code);
+      return false;
+    }
+    if (f.order_id.value.trim() === "") {
+      swalError('Falta el pedido', 'Debes ingresar el número de pedido.', f.order_id);
+      return false;
+    }
+    if (f.firstname.value.trim() === "") {
+      swalError('Falta el nombre', 'Debes ingresar el nombre de quien recibe.', f.firstname);
+      return false;
+    }
+    var input = document.getElementById('photo');
+    if (!input || !input.files || !input.files.length) {
+      swalError('Falta la foto', 'Debes seleccionar una foto.', input);
+      return false;
+    }
+
+    // Validación extra: tipo permitido
+    var file = input.files[0];
+    var ok = /image\/(jpeg|jpg|png)/i.test(file.type);
+    if (!ok) {
+      swalError('Formato no permitido', 'Solo se permite JPG o PNG.', input);
+      return false;
+    }
+
+    return true;
+  }
+
+  // ====== COMPRESIÓN ANTES DE ENVIAR ======
+  async function compressImageFile(file, opts) {
+    opts = opts || {};
+    var maxW = opts.maxW || 1280;
+    var maxH = opts.maxH || 1280;
+    var quality = (typeof opts.quality === 'number') ? opts.quality : 0.75;
+
+    // Si ya viene liviana, no la tocamos
+    if (file.size <= 350 * 1024) return file;
+
+    const img = await new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = reject;
+      image.src = URL.createObjectURL(file);
+    });
+
+    let w = img.naturalWidth || img.width;
+    let h = img.naturalHeight || img.height;
+
+    const scale = Math.min(maxW / w, maxH / h, 1);
+    const nw = Math.max(1, Math.floor(w * scale));
+    const nh = Math.max(1, Math.floor(h * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = nw;
+    canvas.height = nh;
+
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, nw, nh);
+    ctx.drawImage(img, 0, 0, nw, nh);
+
+    URL.revokeObjectURL(img.src);
+
+    const blob = await new Promise((resolve) => {
+      canvas.toBlob((b) => resolve(b), 'image/jpeg', quality);
+    });
+
+    if (!blob) return file;
+
+    const newName = (file.name || 'foto').replace(/\.(png|jpg|jpeg|gif|webp)$/i, '') + '.jpg';
+    return new File([blob], newName, { type: 'image/jpeg', lastModified: Date.now() });
+  }
+
+  // Mostrar tamaño original al elegir foto
+  $('#photo').on('change', function(){
+    var el = document.getElementById('photoInfo');
+    if (!this.files || !this.files.length) { el.textContent = ''; return; }
+    el.textContent = 'Original: ' + bytesToHuman(this.files[0].size);
+  });
+
+  // Submit: bloquear doble envío + comprimir + enviar
+  var enviando = false;
+
+  $(function () {
+    $('#formulario').on('submit', async function(e) {
+
+      if (enviando) { e.preventDefault(); return false; }
+
+      if (!validar_formulario()) {
+        e.preventDefault();
+        return false;
+      }
+
+      e.preventDefault(); // detenemos para comprimir
+
+      enviando = true;
+      $('#btnEnviar').prop('disabled', true);
+
+      try {
+        const input = document.getElementById('photo');
+        const original = input.files[0];
+        const originalSize = original.size;
+
+        swalLoading('Comprimiendo foto…', 'Esto ayuda a que el envío sea más rápido.');
+
+        const compressed = await compressImageFile(original, { maxW: 1280, maxH: 1280, quality: 0.75 });
+
+        // Reemplaza archivo del input por el comprimido
+        const dt = new DataTransfer();
+        dt.items.add(compressed);
+        input.files = dt.files;
+
+        // Mostrar info
+        var el = document.getElementById('photoInfo');
+        if (el && compressed && compressed.size) {
+          el.textContent = 'Original: ' + bytesToHuman(originalSize) + ' → Enviar: ' + bytesToHuman(compressed.size);
+        }
+
+        // Cambia loading a "enviando"
+        Swal.update({ title: 'Enviando…', text: 'Subiendo la foto y guardando el pedido.' });
+
+        // Enviar
+        this.submit();
+      } catch (err) {
+        console.log(err);
+        swalClose();
+        // Si falla la compresión, enviamos igual
+        this.submit();
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
