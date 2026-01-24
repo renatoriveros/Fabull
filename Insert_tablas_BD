@@ -76,3 +76,9 @@ CREATE TABLE paquete_tercero (
     rut_tercero VARCHAR(15),
     nombre_tercero VARCHAR(150)
 );
+EN CASO DE QUE NO SE LE PIDA EL RUT A EL TERCERO.
+CREATE TABLE paquete_tercero (
+    id_interno INT PRIMARY KEY REFERENCES paquete_historico(id_interno),
+    nombre_tercero VARCHAR(150) NOT NULL,
+    parentesco VARCHAR(50) -- Opcional: para saber si es conserje, vecino, etc.
+);
