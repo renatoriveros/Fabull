@@ -4,17 +4,19 @@ CREATE TABLE comuna (
     nombre_comuna VARCHAR(100) NOT NULL UNIQUE
 );
 
--- 2. Catálogo de Estados (Pendiente, Entregado, etc.)
+-- 2. Catálogo de Estados
 CREATE TABLE estado_paquete (
     id SERIAL PRIMARY KEY,
     nombre_estado VARCHAR(50) NOT NULL UNIQUE
 );
 
--- 3. Empresas Clientes (B2B)
+-- 3. Empresas Clientes (RUT como Identificador)
 CREATE TABLE empresa (
-    id SERIAL PRIMARY KEY,
+    rut_empresa VARCHAR(15) PRIMARY KEY, -- Cambiado: RUT es la PK
     nombre_empresa VARCHAR(150) NOT NULL,
-    rut_empresa VARCHAR(15) UNIQUE
+    telefono VARCHAR(20),
+    direccion_oficina TEXT,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 4. Personal (Conductores/Admin)
@@ -25,12 +27,37 @@ CREATE TABLE usuario (
     password_hash TEXT NOT NULL
 );
 
--- 5. Clientes Finales (Destinatarios)
+-- 5. Clientes Finales (ID Autoincrementable)
 CREATE TABLE clientes (
     id SERIAL PRIMARY KEY,
     nombre_completo VARCHAR(200) NOT NULL,
-    telefono VARCHAR(20) -- Formato +569...
+    telefono VARCHAR(20),
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 6. Ubicaciones de Entrega
+CREATE TABLE direccion (
+    id SERIAL PRIMARY KEY,
+    id_cliente INT REFERENCES clientes(id) ON DELETE CASCADE,
+    id_comuna INT REFERENCES comuna(id),
+    calle VARCHAR(150) NOT NULL,
+    numero_calle VARCHAR(20) NOT NULL,
+    indicaciones TEXT
+);
+
+-- 7. Paquetes Activos (Con ID Interno SERIAL)
+CREATE TABLE paquete (
+    id_interno SERIAL PRIMARY KEY,
+    id_paquete_empresa VARCHAR(100) NOT NULL, -- ID que da la empresa
+    rut_empresa VARCHAR(15) REFERENCES empresa(rut_empresa),
+    id_cliente INT REFERENCES clientes(id),
+    id_direccion INT REFERENCES direccion(id),
+    id_estado INT REFERENCES estado_paquete(id) DEFAULT 1,
+    id_usuario INT REFERENCES usuario(id),
+    foto_ruta TEXT,
+    comentario TEXT,
+    fecha_ingreso TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+););
 
 -- 6. Ubicaciones Específicas
 CREATE TABLE direccion (
@@ -39,7 +66,8 @@ CREATE TABLE direccion (
     id_comuna INT REFERENCES comuna(id),
     calle VARCHAR(150) NOT NULL,
     numero_calle VARCHAR(20) NOT NULL,
-    indicaciones TEXT
+    indicaciones TEXT -- Ej: "Depto 402", "Casa portón negro"
+);
 );
 -- 7. Paquetes Activos (En bodega o en ruta)
 CREATE TABLE paquete (
