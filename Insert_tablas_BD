@@ -1,0 +1,78 @@
+-- 1. Catálogo de Comunas
+CREATE TABLE comuna (
+    id SERIAL PRIMARY KEY,
+    nombre_comuna VARCHAR(100) NOT NULL UNIQUE
+);
+
+-- 2. Catálogo de Estados (Pendiente, Entregado, etc.)
+CREATE TABLE estado_paquete (
+    id SERIAL PRIMARY KEY,
+    nombre_estado VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- 3. Empresas Clientes (B2B)
+CREATE TABLE empresa (
+    id SERIAL PRIMARY KEY,
+    nombre_empresa VARCHAR(150) NOT NULL,
+    rut_empresa VARCHAR(15) UNIQUE
+);
+
+-- 4. Personal (Conductores/Admin)
+CREATE TABLE usuario (
+    id SERIAL PRIMARY KEY,
+    nombre_usuario VARCHAR(100) NOT NULL,
+    correo VARCHAR(100) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL
+);
+
+-- 5. Clientes Finales (Destinatarios)
+CREATE TABLE clientes (
+    id SERIAL PRIMARY KEY,
+    nombre_completo VARCHAR(200) NOT NULL,
+    telefono VARCHAR(20) -- Formato +569...
+);
+
+-- 6. Ubicaciones Específicas
+CREATE TABLE direccion (
+    id SERIAL PRIMARY KEY,
+    id_cliente INT REFERENCES clientes(id) ON DELETE CASCADE,
+    id_comuna INT REFERENCES comuna(id),
+    calle VARCHAR(150) NOT NULL,
+    numero_calle VARCHAR(20) NOT NULL,
+    indicaciones TEXT
+);
+-- 7. Paquetes Activos (En bodega o en ruta)
+CREATE TABLE paquete (
+    id_interno SERIAL PRIMARY KEY,           -- Tu ID correlativo (1, 2, 3...)
+    id_paquete_empresa VARCHAR(100) NOT NULL, -- El ID que te da DBS, Tienda X, etc.
+    id_empresa INT REFERENCES empresa(id),
+    id_cliente INT REFERENCES clientes(id),
+    id_direccion INT REFERENCES direccion(id),
+    id_estado INT REFERENCES estado_paquete(id) DEFAULT 1,
+    id_usuario INT REFERENCES usuario(id),   -- Conductor asignado
+    foto_ruta TEXT,                          -- Link a la imagen en el servidor
+    comentario TEXT,                         -- Notas de entrega o problemas
+    fecha_ingreso TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 8. Historial de Paquetes (Entregas finalizadas)
+CREATE TABLE paquete_historico (
+    id_interno INT PRIMARY KEY,              -- IMPORTANTE: Aquí NO es SERIAL, se hereda del activo
+    id_paquete_empresa VARCHAR(100),
+    id_empresa INT REFERENCES empresa(id),
+    id_cliente INT REFERENCES clientes(id),
+    id_direccion INT REFERENCES direccion(id),
+    id_estado INT REFERENCES estado_paquete(id),
+    id_usuario INT REFERENCES usuario(id),
+    foto_ruta TEXT,
+    comentario TEXT,
+    fecha_ingreso TIMESTAMP,                 -- Fecha original de creación
+    fecha_finalizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Fecha del cierre
+);
+
+-- 9. Detalle de Terceros (Solo si no recibe el titular)
+CREATE TABLE paquete_tercero (
+    id_interno INT PRIMARY KEY REFERENCES paquete_historico(id_interno) ON DELETE CASCADE,
+    rut_tercero VARCHAR(15),
+    nombre_tercero VARCHAR(150)
+);
