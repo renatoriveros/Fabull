@@ -35,15 +35,6 @@ CREATE TABLE clientes (
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 6. Ubicaciones de Entrega
-CREATE TABLE direccion (
-    id SERIAL PRIMARY KEY,
-    id_cliente INT REFERENCES clientes(id) ON DELETE CASCADE,
-    id_comuna INT REFERENCES comuna(id),
-    calle VARCHAR(150) NOT NULL,
-    numero_calle VARCHAR(20) NOT NULL,
-    indicaciones TEXT
-);
 
 -- 6. Ubicaciones Específicas
 CREATE TABLE direccion (
@@ -57,32 +48,33 @@ CREATE TABLE direccion (
 );
 -- 7. Paquetes Activos (En bodega o en ruta)
 CREATE TABLE paquete (
-    id_interno SERIAL PRIMARY KEY,           -- Tu ID correlativo (1, 2, 3...)
-    id_paquete_empresa VARCHAR(100) NOT NULL, -- El ID que te da DBS, Tienda X, etc.
+    id_interno SERIAL PRIMARY KEY,           
+    id_paquete_empresa VARCHAR(100) NOT NULL, 
     id_empresa INT REFERENCES empresa(id),
     id_cliente INT REFERENCES clientes(id),
     id_direccion INT REFERENCES direccion(id),
     id_estado INT REFERENCES estado_paquete(id) DEFAULT 1,
-    id_usuario INT REFERENCES usuario(id),   -- Conductor asignado
-    foto_ruta TEXT,                          -- Link a la imagen en el servidor
-    comentario TEXT,                         -- Notas de entrega o problemas
+    id_usuario INT REFERENCES usuario(id),   
+    foto_ruta TEXT,                          
+    comentario TEXT,  
+    currier VARCHAR(20),
     fecha_ingreso TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 8. Historial de Paquetes (Entregas finalizadas)
 CREATE TABLE paquete_historico (
-    id_interno INT PRIMARY KEY,              -- IMPORTANTE: Aquí NO es SERIAL, se hereda del activo
+    id_interno INT PRIMARY KEY,
     id_paquete_empresa VARCHAR(100),
-    id_empresa INT REFERENCES empresa(id),
+    rut_empresa VARCHAR(15) REFERENCES empresa(rut_empresa), -- Tipo cambiado a VARCHAR para ser compatible
     id_cliente INT REFERENCES clientes(id),
     id_direccion INT REFERENCES direccion(id),
-    id_estado INT REFERENCES estado_paquete(id),
-    id_usuario INT REFERENCES usuario(id),
-    foto_ruta TEXT,
-    comentario TEXT,
-    fecha_ingreso TIMESTAMP,                 -- Fecha original de creación
-    fecha_finalizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Fecha del cierre
-);
+   id_estado INT REFERENCES estado_paquete(id_estado_paquete),
+   id_usuario INT REFERENCES usuario(id),
+   foto_ruta TEXT,
+   comentario TEXT,
+   currier VARCHAR(20),
+   fecha_ingreso TIMESTAMP,
+   fecha_finalizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 -- 9. Detalle de Terceros (Solo si no recibe el titular)
 CREATE TABLE paquete_tercero (
